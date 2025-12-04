@@ -1,18 +1,21 @@
 package com.example.inventorymanager;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * REST Controller for managing inventory items.
- * The base path for all endpoints is /api/v1/inventory.
- */
 @RestController
 @RequestMapping("/api/v1/inventory")
+@Tag(name = "Inventory Controller", description = "Operations related to inventory management")
 public class InventoryController {
+
+    private static final Logger log = LoggerFactory.getLogger(InventoryController.class);
 
     private final InventoryRepository repository;
 
@@ -21,48 +24,78 @@ public class InventoryController {
         this.repository = repository;
     }
 
-    // CREATE: POST /api/v1/inventory
+    // CREATE
+    @Operation(summary = "Create a new inventory item", description = "Adds a new item to the inventory database")
     @PostMapping
     public InventoryItem createItem(@RequestBody InventoryItem newItem) {
-        return repository.save(newItem);
+        log.info("Request to create item: {}", newItem);
+        InventoryItem saved = repository.save(newItem);
+        log.info("Item created with ID: {}", saved.getId());
+        return saved;
     }
 
-    // READ ALL: GET /api/v1/inventory
+    // READ ALL
+    @Operation(summary = "Get all inventory items", description = "Retrieves a list of all items in inventory")
     @GetMapping
     public List<InventoryItem> getAllItems() {
-        return repository.findAll();
+        log.info("Fetching all inventory items");
+        List<InventoryItem> items = repository.findAll();
+        log.info("Fetched {} items", items.size());
+        return items;
     }
 
-    // READ ONE: GET /api/v1/inventory/{id}
+    // READ ONE
+    @Operation(summary = "Get item by ID", description = "Fetches a single inventory item using its ID")
     @GetMapping("/{id}")
     public ResponseEntity<InventoryItem> getItemById(@PathVariable Long id) {
-        return repository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    // UPDATE: PUT /api/v1/inventory/{id}
-    @PutMapping("/{id}")
-    public ResponseEntity<InventoryItem> updateItem(@PathVariable Long id, @RequestBody InventoryItem itemDetails) {
+        log.info("Fetching item with ID: {}", id);
         return repository.findById(id)
                 .map(item -> {
+                    log.info("Item found: {}", item);
+                    return ResponseEntity.ok(item);
+                })
+                .orElseGet(() -> {
+                    log.warn("Item with ID {} not found", id);
+                    return ResponseEntity.notFound().build();
+                });
+    }
+
+    // UPDATE
+    @Operation(summary = "Update item by ID", description = "Updates an existing inventory item using its ID")
+    @PutMapping("/{id}")
+    public ResponseEntity<InventoryItem> updateItem(@PathVariable Long id, @RequestBody InventoryItem itemDetails) {
+        log.info("Updating item with ID: {}", id);
+        return repository.findById(id)
+                .map(item -> {
+                    log.debug("Current item: {}", item);
+                    log.debug("New details: {}", itemDetails);
+
                     item.setName(itemDetails.getName());
                     item.setSku(itemDetails.getSku());
                     item.setQuantity(itemDetails.getQuantity());
                     item.setPrice(itemDetails.getPrice());
-                    InventoryItem updatedItem = repository.save(item);
-                    return ResponseEntity.ok(updatedItem);
+
+                    InventoryItem updated = repository.save(item);
+                    log.info("Item updated: {}", updated);
+                    return ResponseEntity.ok(updated);
                 })
-                .orElse(ResponseEntity.notFound().build());
+                .orElseGet(() -> {
+                    log.warn("Cannot update. Item with ID {} not found", id);
+                    return ResponseEntity.notFound().build();
+                });
     }
 
-    // DELETE: DELETE /api/v1/inventory/{id}
+    // DELETE
+    @Operation(summary = "Delete item by ID", description = "Removes an inventory item from the database using its ID")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteItem(@PathVariable Long id) {
+        log.info("Deleting item with ID: {}", id);
         if (repository.existsById(id)) {
             repository.deleteById(id);
+            log.info("Item {} deleted", id);
             return ResponseEntity.noContent().build();
         } else {
+            log.warn("Cannot delete. Item with ID {} not found", id);
             return ResponseEntity.notFound().build();
         }
     }
