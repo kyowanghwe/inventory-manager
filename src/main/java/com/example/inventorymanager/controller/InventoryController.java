@@ -1,5 +1,7 @@
-package com.example.inventorymanager;
+package com.example.inventorymanager.controller;
 
+import com.example.inventorymanager.InventoryItem;
+import com.example.inventorymanager.repository.InventoryRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;

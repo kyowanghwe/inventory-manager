@@ -1,5 +1,6 @@
-package com.example.inventorymanager;
+package com.example.inventorymanager.repository;
 
+import com.example.inventorymanager.InventoryItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
